@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { WizardData } from '@/hooks/use-wizard';
 import { ScoreChip } from '../ScoreChip';
-import { Download, ChevronDown, ChevronUp, Briefcase, GraduationCap, Award, Mail, Phone, Sparkles } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Briefcase, GraduationCap, Award, Mail, Phone, Sparkles, ExternalLink, FileText } from 'lucide-react';
 import { Button } from '../ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -79,7 +79,11 @@ export function ResultsStep({ data }: ResultsStepProps) {
       <div className="space-y-4">
         {sortedResults.map((result, idx) => {
           const isExpanded = expandedRow === idx;
-          const isFit = result.role_fit.toUpperCase() === "YES" || result.role_fit.toUpperCase() === "TRUE";
+          const roleSuggestion = result.suggested_role && result.suggested_role !== 'Not Found'
+            ? result.suggested_role
+            : result.best_role && result.best_role !== 'Not Found'
+            ? result.best_role
+            : 'General Fit';
 
           return (
             <motion.div 
@@ -111,21 +115,12 @@ export function ResultsStep({ data }: ResultsStepProps) {
                 </div>
 
                 <div className="hidden md:block flex-1 min-w-[200px]">
-                   <p className="text-sm font-medium text-foreground line-clamp-1">{result.best_role || result.suggested_role || 'General Fit'}</p>
-                   <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{result.summary}</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Role Suggestion</p>
+                  <p className="text-sm font-semibold text-primary line-clamp-1">{roleSuggestion}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{result.summary}</p>
                 </div>
 
                 <div className="flex items-center gap-4 lg:gap-8 ml-auto shrink-0">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Role Fit</p>
-                    <span className={cn(
-                      "text-xs font-bold px-2 py-0.5 rounded-full border",
-                      isFit ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"
-                    )}>
-                      {isFit ? 'YES' : 'NO'}
-                    </span>
-                  </div>
-                  
                   <div className="text-right">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Score</p>
                     <ScoreChip score={result.score} />
@@ -185,8 +180,8 @@ export function ResultsStep({ data }: ResultsStepProps) {
                         </div>
                         
                         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Suggested Role</h4>
-                           <p className="font-semibold text-foreground">{result.suggested_role || result.best_role || 'Not specified'}</p>
+                           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Role Suggestion</h4>
+                           <p className="font-semibold text-primary">{roleSuggestion}</p>
                         </div>
                       </div>
 
@@ -210,11 +205,26 @@ export function ResultsStep({ data }: ResultsStepProps) {
                                <p className="text-muted-foreground">{result.degree || 'Degree unspecified'} {result.graduation_year ? `(${result.graduation_year})` : ''}</p>
                              </div>
                            </div>
-                           {result.resume_link && (
+                           {result.resume_link && result.resume_link !== 'Not Found' && (
                              <div className="pt-3 mt-3 border-t border-slate-100">
-                               <a href={result.resume_link} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
-                                 View Original Resume
-                               </a>
+                               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Resume</p>
+                               {result.resume_link.startsWith('http') ? (
+                                 <a
+                                   href={result.resume_link}
+                                   target="_blank"
+                                   rel="noreferrer"
+                                   onClick={(e) => e.stopPropagation()}
+                                   className="text-sm font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1.5 break-all"
+                                 >
+                                   <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                                   {result.resume_link}
+                                 </a>
+                               ) : (
+                                 <span className="text-sm text-foreground flex items-center gap-1.5 break-all">
+                                   <FileText className="w-3.5 h-3.5 shrink-0 text-primary" />
+                                   {result.resume_link}
+                                 </span>
+                               )}
                              </div>
                            )}
                          </div>
