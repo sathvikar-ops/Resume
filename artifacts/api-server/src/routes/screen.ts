@@ -2,9 +2,38 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import multer from "multer";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import ExcelJS from "exceljs";
+import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+interface StoredFile {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+  expiresAt: number;
+}
+
+const resumeStore = new Map<string, StoredFile>();
+const FILE_TTL_MS = 2 * 60 * 60 * 1000;
+
+function storeResume(file: Express.Multer.File): string {
+  const id = randomUUID();
+  resumeStore.set(id, {
+    buffer: file.buffer,
+    mimetype: file.mimetype,
+    originalname: file.originalname,
+    expiresAt: Date.now() + FILE_TTL_MS,
+  });
+  return id;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, file] of resumeStore.entries()) {
+    if (file.expiresAt < now) resumeStore.delete(id);
+  }
+}, 15 * 60 * 1000);
 
 interface CandidateResult {
   name: string;
@@ -74,7 +103,7 @@ STRICT OUTPUT FORMAT: Return ONLY a valid JSON array (no markdown, no extra text
     "suggested_role": "string",
     "summary": "string under 3 lines",
     "skill_gap": "string",
-    "resume_link": "filename"
+    "resume_link": "RESUME_ID_PLACEHOLDER"
   }
 ]
 
@@ -85,6 +114,28 @@ STRICT RULES:
 - Keep summary under 3 lines
 - Ensure score is between 0-10
 - Maintain 1 output object per resume`;
+
+router.get("/resume/:id", (req: Request, res: Response) => {
+  const file = resumeStore.get(req.params.id);
+  if (!file) {
+    res.status(404).json({ error: "Resume not found or expired. Please re-run the screening." });
+    return;
+  }
+
+  const isPdf = file.mimetype === "application/pdf" || file.originalname.toLowerCase().endsWith(".pdf");
+  const contentType = isPdf
+    ? "application/pdf"
+    : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+  res.setHeader("Content-Type", contentType);
+  res.setHeader(
+    "Content-Disposition",
+    isPdf
+      ? `inline; filename="${file.originalname}"`
+      : `attachment; filename="${file.originalname}"`
+  );
+  res.send(file.buffer);
+});
 
 router.post(
   "/screen",
@@ -105,6 +156,8 @@ router.post(
         res.status(400).json({ error: "At least one resume file is required" });
         return;
       }
+
+      const resumeIds = resumeFiles.map((f) => storeResume(f));
 
       const jdFiles = files["jobDescriptions"] || [];
       const companyFiles = files["companyInfo"] || [];
@@ -143,10 +196,10 @@ router.post(
 
       userContent += `CANDIDATE RESUMES TO SCREEN:\n`;
       resumeTexts.forEach((text, i) => {
-        userContent += `--- Resume ${i + 1} (File: ${resumeFiles[i].originalname}) ---\n${text}\n\n`;
+        userContent += `--- Resume ${i + 1} (ID: ${resumeIds[i]}, File: ${resumeFiles[i].originalname}) ---\n${text}\n\n`;
       });
 
-      userContent += `\nProcess ALL ${resumeFiles.length} resumes and return a JSON array with exactly ${resumeFiles.length} objects. Use the filename as the resume_link value.`;
+      userContent += `\nProcess ALL ${resumeFiles.length} resumes and return a JSON array with exactly ${resumeFiles.length} objects. For resume_link, use the Resume ID provided above for that candidate (e.g. "${resumeIds[0]}").`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-5.2",
@@ -172,6 +225,11 @@ router.post(
         res.status(500).json({ error: "Failed to parse AI response", details: content.slice(0, 500) });
         return;
       }
+
+      results = results.map((r, i) => ({
+        ...r,
+        resume_link: `/api/resume/${resumeIds[i] ?? r.resume_link}`,
+      }));
 
       res.json({ results, processedCount: results.length });
     } catch (err: unknown) {
@@ -202,12 +260,10 @@ router.post("/download-excel", async (req: Request, res: Response) => {
       { header: "Degree", key: "degree", width: 25 },
       { header: "Skills Found", key: "skills_found", width: 40 },
       { header: "Score (0-10)", key: "score", width: 12 },
-      { header: "Role Fit", key: "role_fit", width: 10 },
-      { header: "Best Role", key: "best_role", width: 22 },
-      { header: "Suggested Role", key: "suggested_role", width: 22 },
+      { header: "Role Suggestion", key: "suggested_role", width: 25 },
       { header: "Summary", key: "summary", width: 50 },
       { header: "Skill Gap", key: "skill_gap", width: 40 },
-      { header: "Resume Link", key: "resume_link", width: 30 },
+      { header: "Resume Link", key: "resume_link", width: 40 },
     ];
 
     const headerRow = worksheet.getRow(1);
@@ -219,9 +275,26 @@ router.post("/download-excel", async (req: Request, res: Response) => {
     };
 
     results.forEach((result) => {
+      const roleSuggestion =
+        result.suggested_role && result.suggested_role !== "Not Found"
+          ? result.suggested_role
+          : result.best_role && result.best_role !== "Not Found"
+          ? result.best_role
+          : "General Fit";
+
       const row = worksheet.addRow({
-        ...result,
+        name: result.name,
+        email: result.email,
+        phone: result.phone,
+        graduation_year: result.graduation_year,
+        college: result.college,
+        degree: result.degree,
         skills_found: Array.isArray(result.skills_found) ? result.skills_found.join(", ") : result.skills_found,
+        score: result.score,
+        suggested_role: roleSuggestion,
+        summary: result.summary,
+        skill_gap: result.skill_gap,
+        resume_link: result.resume_link,
       });
 
       const scoreCell = row.getCell("score");
@@ -235,13 +308,6 @@ router.post("/download-excel", async (req: Request, res: Response) => {
       } else {
         scoreCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
         scoreCell.font = { color: { argb: "FF991B1B" } };
-      }
-
-      const fitCell = row.getCell("role_fit");
-      if (result.role_fit === "YES") {
-        fitCell.font = { color: { argb: "FF065F46" }, bold: true };
-      } else {
-        fitCell.font = { color: { argb: "FF991B1B" }, bold: true };
       }
     });
 
