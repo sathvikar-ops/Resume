@@ -11,18 +11,25 @@
   "dependencies": {
     "@workspace/db": "workspace:*",
     "@workspace/api-zod": "workspace:*",
+    "@workspace/integrations-openai-ai-server": "workspace:*",
     "drizzle-orm": "catalog:",
     "express": "^5",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.8.0",
+    "exceljs": "^4.4.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/express": "^5.0.6",
     "@types/cors": "^2.8.19",
     "@types/cookie-parser": "^1.4.10",
+    "@types/multer": "^1.4.12",
+    "@types/pdf-parse": "^1.1.4",
     "esbuild": "^0.27.3",
     "pino-pretty": "^13",
     "tsx": "catalog:"

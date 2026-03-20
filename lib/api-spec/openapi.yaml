@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Resume Screener API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: screening
+    description: Resume screening operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /screen:
+    post:
+      operationId: screenResumes
+      tags: [screening]
+      summary: Screen resumes with AI
+      description: Upload resumes, job descriptions, company info, and get AI-scored candidate evaluations
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ScreenRequest"
+      responses:
+        "200":
+          description: Screening results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreenResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /download-excel:
+    post:
+      operationId: downloadExcel
+      tags: [screening]
+      summary: Download results as Excel
+      description: Generate and download an Excel file from screening results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DownloadExcelRequest"
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +91,111 @@ components:
           type: string
       required:
         - status
-
+    ScreenRequest:
+      type: object
+      properties:
+        roles:
+          type: string
+          description: JSON array of selected roles
+        customKeywords:
+          type: string
+          description: JSON array of custom keywords
+        jobDescriptions:
+          type: array
+          items:
+            type: string
+            format: binary
+        companyInfo:
+          type: string
+          format: binary
+        shortlistedResumes:
+          type: array
+          items:
+            type: string
+            format: binary
+        resumes:
+          type: array
+          items:
+            type: string
+            format: binary
+      required:
+        - roles
+        - resumes
+    CandidateResult:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        graduation_year:
+          type: string
+        college:
+          type: string
+        degree:
+          type: string
+        skills_found:
+          type: array
+          items:
+            type: string
+        score:
+          type: number
+        role_fit:
+          type: string
+        best_role:
+          type: string
+        suggested_role:
+          type: string
+        summary:
+          type: string
+        skill_gap:
+          type: string
+        resume_link:
+          type: string
+      required:
+        - name
+        - email
+        - phone
+        - graduation_year
+        - college
+        - degree
+        - skills_found
+        - score
+        - role_fit
+        - best_role
+        - suggested_role
+        - summary
+        - skill_gap
+        - resume_link
+    ScreenResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateResult"
+        processedCount:
+          type: integer
+      required:
+        - results
+        - processedCount
+    DownloadExcelRequest:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateResult"
+      required:
+        - results
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+      required:
+        - error

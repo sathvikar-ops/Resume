@@ -1,0 +1,18 @@
+packages:
+  "framer-motion": "For smooth wizard step transitions, animated loading states, and polished micro-interactions"
+  "react-dropzone": "For beautiful, accessible drag-and-drop file upload areas"
+  "clsx": "For conditional class name joining"
+  "tailwind-merge": "For merging tailwind classes safely"
+  "lucide-react": "For crisp, consistent iconography across the professional interface"
+
+images:
+  - path: "artifacts/resume-screener/public/images/logo-mark.png"
+    description: "Minimalist, premium corporate logo mark in deep blue, abstract geometric shape representing analysis and human resources, transparent background"
+    aspect_ratio: "1:1"
+  - path: "artifacts/resume-screener/public/images/hero-bg.png"
+    description: "Subtle, professional abstract background pattern. Very light slate grey and soft blue gradients, tech corporate aesthetic, minimal noise, high-key lighting."
+    aspect_ratio: "16:9"
+
+notes:
+  - The API expects 'roles' and 'customKeywords' as JSON strings in the multipart/form-data. We must stringify arrays before passing to the mutation.
+  - The generated API hooks use standard browser Blob/File objects which are compatible with react-dropzone.
