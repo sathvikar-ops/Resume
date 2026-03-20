@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, BrainCircuit, FileSearch, CheckCircle2 } from 'lucide-react';
+import { Loader2, BrainCircuit, FileSearch, CheckCircle2, X } from 'lucide-react';
 
 const MESSAGES = [
   { text: "Initializing AI Engine...", icon: BrainCircuit },
@@ -96,6 +96,3 @@ export function ProcessingStep({ isError }: ProcessingStepProps) {
     </div>
   );
 }
-
-// Needed to add X icon here for the error state since it wasn't imported at top
-import { X } from 'lucide-react';
