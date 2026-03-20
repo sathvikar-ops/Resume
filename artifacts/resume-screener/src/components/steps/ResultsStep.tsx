@@ -208,23 +208,17 @@ export function ResultsStep({ data }: ResultsStepProps) {
                            {result.resume_link && result.resume_link !== 'Not Found' && (
                              <div className="pt-3 mt-3 border-t border-slate-100">
                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Resume</p>
-                               {result.resume_link.startsWith('http') ? (
-                                 <a
-                                   href={result.resume_link}
-                                   target="_blank"
-                                   rel="noreferrer"
-                                   onClick={(e) => e.stopPropagation()}
-                                   className="text-sm font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1.5 break-all"
-                                 >
-                                   <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                                   {result.resume_link}
-                                 </a>
-                               ) : (
-                                 <span className="text-sm text-foreground flex items-center gap-1.5 break-all">
-                                   <FileText className="w-3.5 h-3.5 shrink-0 text-primary" />
-                                   {result.resume_link}
-                                 </span>
-                               )}
+                               <a
+                                 href={result.resume_link}
+                                 target="_blank"
+                                 rel="noreferrer"
+                                 onClick={(e) => e.stopPropagation()}
+                                 className="text-sm font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1.5"
+                               >
+                                 <FileText className="w-4 h-4 shrink-0" />
+                                 Open Resume
+                                 <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                               </a>
                              </div>
                            )}
                          </div>

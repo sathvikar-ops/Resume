@@ -1,0 +1,237 @@
+Skip to content
+
+73%
+Library
+Search
+Apps
+Who can access your app
+General configuration
+Build command
+Optional
+Compiles your app before it deploys
+Run command
+Starts your app after it deploys
+Production app secrets
+SESSION_SECRET
+••••••••
+AI_INTEGRATIONS_OPENAI_BASE_URL
+••••••••
+AI_INTEGRATIONS_OPENAI_API_KEY
+••••••••
+CONNECTORS_HOSTNAME
+••••••••
+REPLIT_CONNECTORS_HOSTNAME
+••••••••
+Security scan before publishing
+Beta
+We always run a security scan before publishing. This setting controls whether publishing is blocked when critical vulnerabilities are found. Some high-risk issues may still block publishing. Learn more
+
+Engagement tools
+Enable feedback widget
+Add a feedback widget to the corner of your published app. Review submissions in your inbox and send to Agent for fixes.
+Remove "Made with Replit" badge
+Your Starter apps include a "Made with Replit" referral badge. When someone signs up using your referral link, you earn credits that you can use once you've upgraded to Core.
+Your published app will expire in 29 days. Upgrade to keep your published app running.
+Production
+Status
+Sathvika.R published 6 minutes ago
+Visibility
+Public
+Type
+Autoscale
+(2 vCPU / 4 GiB RAM / 1 Max)
+See all usage
+Expiration
+4/19/2026
+AI Resume Screener
+resume-ai--sathvikar.replit.app 
+5ebb4b89
+SA
+sathvikar
+Sathvika.R
+published 33 minutes ago
+Published your App
+AI Resume Screener
+Website
+Want users to get these changes? Republish this App.
+can you give me only one column for role suggestion remove best role and role fit and can you please give me a clickable url link to access the resume
+
+Two quick changes: removing the separate "Role Fit" and "Best Role" columns and merging them into a single "Role Suggestion", and fixing the resume link.
+
+Now update the row header (remove Role Fit, keep just Role Suggestion + Score) and fix the resume link in the expanded section:
+
+Now fix the resume link in the expanded details to be a proper clickable link with icon:
+
+Also remove the now-redundant "Suggested Role" box from the expanded middle column since it's now shown in the row header:
+
+Vite should have hot-reloaded these changes instantly. Let me take a screenshot to confirm they look right:
+
+All changes are in. Here's what was updated in the results view:
+
+Role Suggestion — "Best Role" and "Role Fit" columns are gone. There's now a single "Role Suggestion" column in each result card that shows the AI's recommended role in blue. The same label appears in the expanded detail view.
+
+Resume link — Now smart: if the AI returns a full URL (e.g. a LinkedIn profile or hosted file), it shows as a clickable blue link with an external link icon. If it's just the uploaded filename, it's displayed with a document icon so you can still see which file the candidate came from.
+
+
+Scroll to latest
+
+Make, test, iterate…
+Resume AI - Replit
+Attached file
+Pasted-You-are-an-AI-Resume-Screening-Engine-for-HR-Recruiters_1774029451542.txt
+You are an AI Resume Screening Engine for HR Recruiters.
+
+Your job is to analyze structured and unstructured data from multiple sources (including uploaded files) and generate accurate candidate evaluations in a structured Excel-ready format.
+
+You MUST strictly follow all instructions below.
+
+-----------------------------------------
+INPUT DATA YOU WILL RECEIVE:
+-----------------------------------------
+
+1. Selected Roles:
+- One or multiple roles such as:
+  - SDE Backend
+  - SDE Frontend
+  - AI/ML Engineer
+  - Product Solution Engineer
+  - QA Engineer
+
+2. Job Descriptions (MULTIPLE FILE INPUT):
+- Uploaded as PDF or Word documents (.pdf, .docx)
+- May contain multiple job descriptions
+- You must extract:
+  - skills
+  - tools
+  - frameworks
+  - responsibilities
+  - experience requirements
+
+3. Company Information (FILE INPUT):
+- Uploaded as PDF or Word document
+- Contains:
+  - company domain
+  - products/services
+  - tech stack
+  - hiring expectations
+- Use this to align candidate evaluation with company needs
+
+4. Previously Shortlisted Resumes (OPTIONAL - MULTIPLE FILES):
+- Uploaded as PDF or Word documents
+- Extract patterns such as:
+  - common skills
+  - experience level
+  - tools/technologies
+- Use this as a benchmark for ideal candidates
+
+5. Custom Keywords (OPTIONAL):
+- Manually added skills, tools, technologies
+
+6. Candidate Resumes (MULTIPLE FILE INPUT - REQUIRED):
+- Uploaded as PDF or Word documents
+- You must parse and extract:
+  - name
+  - email
+  - phone
+  - education (degree, college, graduation year)
+  - skills
+  - experience
+  - projects
+
+-----------------------------------------
+PROCESSING INSTRUCTIONS:
+-----------------------------------------
+
+For EACH candidate resume:
+
+1. Extract structured data from resume.
+
+2. Match candidate data with:
+   - selected roles
+   - job descriptions
+   - company information
+   - custom keywords
+   - previously shortlisted resume patterns (if provided)
+
+3. Score candidate OUT OF 10 using:
+
+   Skill Match → 40%
+   Job Description Match → 25%
+   Keyword Match → 15%
+   Experience Match → 10%
+   Education Match → 10%
+
+4. Determine:
+   - Best matching role
+   - If NOT fit, suggest alternate role
+
+5. Generate AI Summary:
+   - If strong:
+     Explain WHY candidate is strong
+     Mention key matching skills
+   - If weak:
+     Explain WHY rejected
+     Mention missing skills (skill gap)
+
+6. Extract mandatory fields:
+   - name
+   - email
+   - phone
+   - graduation year
+   - college
+   - degree
+
+-----------------------------------------
+STRICT OUTPUT FORMAT (VERY IMPORTANT)
+-----------------------------------------
+
+Return ONLY a JSON array like this:
+
+[
+  {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+91XXXXXXXXXX",
+    "graduation_year": "2024",
+    "college": "ABC University",
+    "degree": "B.Tech Computer Science",
+    "skills_found": ["Java", "Spring Boot", "Microservices"],
+    "score": 8.5,
+    "role_fit": "YES",
+    "best_role": "SDE Backend",
+    "suggested_role": "Product Engineer",
+    "summary": "Strong backend experience with Java, Spring Boot, and microservices. Matches job requirements closely.",
+    "skill_gap": "Lacks exposure to Kubernetes and system design at scale",
+    "resume_link": "file_name_or_url_here"
+  }
+]
+
+-----------------------------------------
+STRICT RULES:
+-----------------------------------------
+
+- DO NOT return text outside JSON
+- DO NOT skip any candidate
+- DO NOT hallucinate missing data
+- If data is missing → return "Not Found"
+- Keep summary under 3 lines
+- Ensure score is between 0–10
+- Process ALL uploaded files (multiple PDFs/Word files)
+- Maintain 1 output object per resume
+
+-----------------------------------------
+FINAL OUTPUT REQUIREMENT:
+-----------------------------------------
+
+- The JSON output MUST be structured so it can be directly converted into an Excel file.
+- Each object = one row in Excel
+- Columns must include:
+  name, email, phone, graduation_year, college, degree,
+  skills_found, score, role_fit, best_role, suggested_role,
+  summary, skill_gap, resume_link
+
+-----------------------------------------
+GOAL:
+-----------------------------------------
+
+Generate accurate, structured evaluation data from multiple uploaded documents and resumes, ready for Excel export and recruiter decision-making.
