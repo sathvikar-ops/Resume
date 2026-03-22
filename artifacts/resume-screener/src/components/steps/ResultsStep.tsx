@@ -179,9 +179,12 @@ export function ResultsStep({ data }: ResultsStepProps) {
                            </div>
                         </div>
                         
-                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Role Suggestion</h4>
                            <p className="font-semibold text-primary">{roleSuggestion}</p>
+                           {result.role_reason && result.role_reason !== 'Not Found' && (
+                             <p className="text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2">{result.role_reason}</p>
+                           )}
                         </div>
                       </div>
 

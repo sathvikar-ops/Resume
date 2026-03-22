@@ -47,6 +47,7 @@ interface CandidateResult {
   role_fit: string;
   best_role: string;
   suggested_role: string;
+  role_reason: string;
   summary: string;
   skill_gap: string;
   resume_link: string;
@@ -101,6 +102,7 @@ STRICT OUTPUT FORMAT: Return ONLY a valid JSON array (no markdown, no extra text
     "role_fit": "YES or NO",
     "best_role": "string",
     "suggested_role": "string",
+    "role_reason": "1-2 sentence explanation of why this role was suggested based on the candidate's skills and experience",
     "summary": "string under 3 lines",
     "skill_gap": "string",
     "resume_link": "RESUME_ID_PLACEHOLDER"
@@ -261,6 +263,7 @@ router.post("/download-excel", async (req: Request, res: Response) => {
       { header: "Skills Found", key: "skills_found", width: 40 },
       { header: "Score (0-10)", key: "score", width: 12 },
       { header: "Role Suggestion", key: "suggested_role", width: 25 },
+      { header: "Role Suggestion Reason", key: "role_reason", width: 40 },
       { header: "Summary", key: "summary", width: 50 },
       { header: "Skill Gap", key: "skill_gap", width: 40 },
       { header: "Resume Link", key: "resume_link", width: 40 },
@@ -292,6 +295,7 @@ router.post("/download-excel", async (req: Request, res: Response) => {
         skills_found: Array.isArray(result.skills_found) ? result.skills_found.join(", ") : result.skills_found,
         score: result.score,
         suggested_role: roleSuggestion,
+        role_reason: result.role_reason || "",
         summary: result.summary,
         skill_gap: result.skill_gap,
         resume_link: result.resume_link,
