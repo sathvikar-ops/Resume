@@ -80,13 +80,35 @@ const SYSTEM_PROMPT = `You are an AI Resume Screening Engine for HR Recruiters.
 
 Your job is to analyze structured and unstructured data from multiple sources and generate accurate candidate evaluations.
 
-For EACH candidate resume provided, you must:
-1. Extract structured data (name, email, phone, education, skills, experience, projects)
-2. Match candidate data with selected roles, job descriptions, company info, and custom keywords
-3. Score candidate OUT OF 10 using: Skill Match 40%, Job Description Match 25%, Keyword Match 15%, Experience Match 10%, Education Match 10%
-4. Determine best matching role and if NOT fit, suggest alternate role
-5. Generate AI Summary (under 3 lines): if strong explain why; if weak explain gap
-6. Extract mandatory fields: name, email, phone, graduation_year, college, degree
+For EACH candidate resume provided, follow these steps IN ORDER:
+
+STEP 1 — Extract candidate data:
+  Extract: name, email, phone, education (degree, college, graduation year), skills, tools, experience, projects.
+
+STEP 2 — Score the candidate OUT OF 10:
+  Skill Match → 40%
+  Job Description Match → 25%
+  Keyword Match → 15%
+  Experience Match → 10%
+  Education Match → 10%
+
+STEP 3 — Decide the suggested_role:
+  - Compare the candidate's skills and experience against ALL provided roles.
+  - Choose the single role that best matches this specific candidate's profile.
+  - This is your "suggested_role". Write it down first before writing anything else for that candidate.
+
+STEP 4 — Write role_reason for that EXACT suggested_role:
+  - CRITICAL: role_reason MUST explain why you chose the suggested_role you just decided in STEP 3.
+  - role_reason must mention specific skills, tools, or experience FROM THIS CANDIDATE'S RESUME that directly justify the suggested_role.
+  - role_reason must name the suggested_role explicitly. Example: "Suggested as SDE Backend because the candidate has 3 years of Java and Spring Boot experience matching the backend JD requirements."
+  - Do NOT write a reason for a different role. The role named in role_reason must exactly match suggested_role.
+
+STEP 5 — Generate AI Summary (under 3 lines):
+  - If strong: explain key matching skills.
+  - If weak: explain skill gaps.
+
+STEP 6 — Identify skill_gap:
+  - List skills required by the job descriptions that are missing from this candidate's resume.
 
 STRICT OUTPUT FORMAT: Return ONLY a valid JSON array (no markdown, no extra text):
 [
@@ -100,9 +122,9 @@ STRICT OUTPUT FORMAT: Return ONLY a valid JSON array (no markdown, no extra text
     "skills_found": ["skill1", "skill2"],
     "score": 8.5,
     "role_fit": "YES or NO",
-    "best_role": "string",
-    "suggested_role": "string",
-    "role_reason": "1-2 sentence explanation of why this role was suggested based on the candidate's skills and experience",
+    "best_role": "string — same value as suggested_role",
+    "suggested_role": "string — the single best-fit role for this candidate",
+    "role_reason": "string — must start with 'Suggested as [suggested_role] because ...' and cite specific skills/experience from this resume",
     "summary": "string under 3 lines",
     "skill_gap": "string",
     "resume_link": "RESUME_ID_PLACEHOLDER"
@@ -114,8 +136,9 @@ STRICT RULES:
 - DO NOT skip any candidate
 - If data is missing return "Not Found"
 - Keep summary under 3 lines
-- Ensure score is between 0-10
-- Maintain 1 output object per resume`;
+- Ensure score is between 0–10
+- Maintain 1 output object per resume
+- role_reason MUST be about the same role as suggested_role — never mix them up`;
 
 router.get("/resume/:id", (req: Request, res: Response) => {
   const file = resumeStore.get(req.params.id);
@@ -228,10 +251,28 @@ router.post(
         return;
       }
 
-      results = results.map((r, i) => ({
-        ...r,
-        resume_link: `/api/resume/${resumeIds[i] ?? r.resume_link}`,
-      }));
+      results = results.map((r, i) => {
+        const suggestedRole = r.suggested_role && r.suggested_role !== "Not Found" ? r.suggested_role : r.best_role;
+
+        let roleReason = r.role_reason || "";
+        if (
+          roleReason &&
+          roleReason !== "Not Found" &&
+          suggestedRole &&
+          suggestedRole !== "Not Found" &&
+          !roleReason.toLowerCase().includes(suggestedRole.toLowerCase())
+        ) {
+          roleReason = `Suggested as ${suggestedRole} because: ${roleReason}`;
+        }
+
+        return {
+          ...r,
+          suggested_role: suggestedRole,
+          best_role: suggestedRole,
+          role_reason: roleReason,
+          resume_link: `/api/resume/${resumeIds[i] ?? r.resume_link}`,
+        };
+      });
 
       res.json({ results, processedCount: results.length });
     } catch (err: unknown) {
